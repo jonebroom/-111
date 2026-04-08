@@ -1,0 +1,13 @@
+{
+  "name": "guestbook",
+  "version": "1.0.0",
+  "description": "留言墙应用",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "sql.js": "^1.10.3"
+  }
+}

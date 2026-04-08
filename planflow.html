@@ -1,0 +1,1555 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlanFlow - 计划管理</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366F1;
+            --primary-hover: #4F46E5;
+            --secondary: #8B5CF6;
+            --accent: #F59E0B;
+            --bg: #0F172A;
+            --card-bg: #1E293B;
+            --card-bg-hover: #334155;
+            --text: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --border: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* 顶部导航 */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: linear-gradient(135deg, var(--card-bg) 0%, #1E1B4B 100%);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .view-switch {
+            display: flex;
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .view-btn {
+            padding: 8px 20px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .view-btn.active {
+            background: var(--primary);
+            color: var(--text);
+        }
+
+        .view-btn:hover:not(.active) {
+            color: var(--text);
+        }
+
+        .add-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border: none;
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        /* 主布局 */
+        .main-container {
+            display: flex;
+            margin-top: 64px;
+            min-height: calc(100vh - 64px);
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            width: 280px;
+            background: var(--card-bg);
+            border-right: 1px solid var(--border);
+            padding: 24px 16px;
+            position: fixed;
+            top: 64px;
+            bottom: 0;
+            left: 0;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-section {
+            margin-bottom: 24px;
+        }
+
+        .sidebar-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            padding: 0 8px;
+        }
+
+        .year-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 0 8px;
+        }
+
+        .year-btn {
+            padding: 8px 14px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .year-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: var(--text);
+        }
+
+        .year-btn:hover:not(.active) {
+            border-color: var(--primary);
+            color: var(--text);
+        }
+
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            padding: 0 8px;
+        }
+
+        .month-btn {
+            padding: 12px 8px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .month-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: var(--text);
+        }
+
+        .month-btn:hover:not(.active) {
+            border-color: var(--primary);
+            color: var(--text);
+        }
+
+        .month-btn.has-plans::after {
+            content: '';
+            display: block;
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            margin: 4px auto 0;
+        }
+
+        .day-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 0 8px;
+        }
+
+        .day-btn {
+            padding: 10px 12px;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .day-btn.active {
+            background: var(--primary);
+            color: var(--text);
+        }
+
+        .day-btn.today {
+            border: 1px solid var(--primary);
+        }
+
+        .day-btn:hover:not(.active) {
+            background: var(--card-bg-hover);
+            color: var(--text);
+        }
+
+        .day-plans-count {
+            font-size: 12px;
+            background: var(--border);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        /* 内容区域 */
+        .content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 24px;
+            min-height: calc(100vh - 64px);
+        }
+
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .content-title {
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .content-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* 视图容器 */
+        .view-container {
+            display: none;
+        }
+
+        .view-container.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 年视图 */
+        .year-view {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .year-month-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid var(--border);
+        }
+
+        .year-month-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .year-month-card h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .year-month-card .plan-count {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .year-month-card .plan-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* 月视图 - 日历 */
+        .calendar {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .calendar-header {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            padding: 16px 0;
+        }
+
+        .calendar-header span {
+            text-align: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: var(--border);
+        }
+
+        .calendar-day {
+            background: var(--card-bg);
+            min-height: 100px;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .calendar-day:hover {
+            background: var(--card-bg-hover);
+        }
+
+        .calendar-day.other-month {
+            background: var(--bg);
+            opacity: 0.5;
+        }
+
+        .calendar-day.today {
+            background: rgba(99, 102, 241, 0.2);
+        }
+
+        .calendar-day.selected {
+            background: var(--primary);
+        }
+
+        .calendar-day-number {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .calendar-day.today .calendar-day-number {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .calendar-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: inline-block;
+            margin: 2px;
+        }
+
+        /* 日视图 */
+        .day-view-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .day-nav-btn {
+            width: 40px;
+            height: 40px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .day-nav-btn:hover {
+            border-color: var(--primary);
+            background: var(--card-bg-hover);
+        }
+
+        .day-view-title {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .day-view-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* 计划列表 */
+        .plan-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .plan-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .plan-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .plan-card.completed {
+            opacity: 0.6;
+        }
+
+        .plan-card.completed .plan-title {
+            text-decoration: line-through;
+        }
+
+        .plan-card.expired {
+            border-color: var(--danger);
+        }
+
+        .plan-checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .plan-checkbox:hover {
+            border-color: var(--primary);
+        }
+
+        .plan-checkbox.checked {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        .plan-checkbox.checked::after {
+            content: '✓';
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .plan-content {
+            flex: 1;
+        }
+
+        .plan-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .plan-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .plan-time {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .plan-time svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .plan-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .plan-meta-item svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .plan-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--primary);
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .plan-tag.daily { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .plan-tag.weekly { background: rgba(139, 92, 246, 0.2); color: var(--secondary); }
+        .plan-tag.monthly { background: rgba(245, 158, 11, 0.2); color: var(--accent); }
+        .plan-tag.yearly { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+
+        .plan-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .plan-action-btn {
+            width: 32px;
+            height: 32px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .plan-action-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .plan-action-btn.delete:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* 弹窗 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--card-bg);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.9);
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: var(--card-bg-hover);
+            color: var(--text);
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .modal-footer {
+            padding: 20px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--text-secondary);
+            color: var(--text);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            border: none;
+            color: var(--text);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        /* 移动端 */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .content {
+                margin-left: 0;
+            }
+
+            .menu-toggle {
+                display: flex;
+            }
+
+            .navbar {
+                padding: 0 16px;
+            }
+
+            .view-switch {
+                display: none;
+            }
+
+            .mobile-view-switch {
+                display: flex;
+            }
+
+            .calendar-day {
+                min-height: 60px;
+                padding: 4px;
+            }
+
+            .calendar-day-number {
+                font-size: 12px;
+            }
+
+            .plan-meta {
+                flex-direction: column;
+                gap: 4px;
+            }
+        }
+
+        .menu-toggle {
+            display: none;
+            width: 40px;
+            height: 40px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-view-switch {
+            display: none;
+            background: var(--card-bg);
+            padding: 4px;
+            border-radius: 8px;
+            gap: 4px;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-view-switch {
+                display: flex;
+            }
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 64px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 49;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar-overlay.active {
+                display: block;
+            }
+        }
+
+        /* 时间选择器样式 */
+        input[type="time"] {
+            color-scheme: dark;
+        }
+
+        input[type="date"] {
+            color-scheme: dark;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <button class="menu-toggle" onclick="toggleSidebar()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 12h18M3 6h18M3 18h18"/>
+                </svg>
+            </button>
+            <div class="logo">PlanFlow</div>
+        </div>
+        <div class="nav-controls">
+            <div class="view-switch">
+                <button class="view-btn active" data-view="year" onclick="switchView('year')">年</button>
+                <button class="view-btn" data-view="month" onclick="switchView('month')">月</button>
+                <button class="view-btn" data-view="day" onclick="switchView('day')">日</button>
+            </div>
+            <button class="add-btn" onclick="openModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14M5 12h14"/>
+                </svg>
+                添加计划
+            </button>
+        </div>
+    </nav>
+
+    <!-- 侧边栏遮罩 -->
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- 主容器 -->
+    <div class="main-container">
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">年份</div>
+                <div class="year-selector" id="yearSelector"></div>
+            </div>
+
+            <div class="sidebar-section" id="monthSection">
+                <div class="sidebar-title">月份</div>
+                <div class="month-grid" id="monthSelector"></div>
+            </div>
+
+            <div class="sidebar-section" id="daySection">
+                <div class="sidebar-title">日期</div>
+                <div class="day-list" id="daySelector"></div>
+            </div>
+        </aside>
+
+        <!-- 内容区域 -->
+        <main class="content">
+            <!-- 年视图 -->
+            <div class="view-container active" id="yearView">
+                <div class="content-header">
+                    <div>
+                        <h1 class="content-title" id="yearViewTitle">2026 年</h1>
+                        <p class="content-subtitle">点击月份查看计划</p>
+                    </div>
+                </div>
+                <div class="year-view" id="yearViewGrid"></div>
+            </div>
+
+            <!-- 月视图 -->
+            <div class="view-container" id="monthView">
+                <div class="content-header">
+                    <div>
+                        <h1 class="content-title" id="monthViewTitle">2026年4月</h1>
+                        <p class="content-subtitle">点击日期查看计划</p>
+                    </div>
+                </div>
+                <div class="calendar">
+                    <div class="calendar-header">
+                        <span>日</span>
+                        <span>一</span>
+                        <span>二</span>
+                        <span>三</span>
+                        <span>四</span>
+                        <span>五</span>
+                        <span>六</span>
+                    </div>
+                    <div class="calendar-grid" id="calendarGrid"></div>
+                </div>
+            </div>
+
+            <!-- 日视图 -->
+            <div class="view-container" id="dayView">
+                <div class="day-view-header">
+                    <button class="day-nav-btn" onclick="navigateDay(-1)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M15 18l-6-6 6-6"/>
+                        </svg>
+                    </button>
+                    <div>
+                        <h1 class="day-view-title" id="dayViewTitle">2026年4月7日</h1>
+                        <p class="day-view-subtitle" id="dayViewSubtitle">今天</p>
+                    </div>
+                    <button class="day-nav-btn" onclick="navigateDay(1)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 18l6-6-6-6"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="plan-list" id="dayPlanList"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 添加/编辑计划弹窗 -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">添加计划</h2>
+                <button class="modal-close" onclick="closeModal()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="planForm">
+                    <input type="hidden" id="planId">
+                    <div class="form-group">
+                        <label class="form-label">计划标题 *</label>
+                        <input type="text" class="form-input" id="planTitle" placeholder="输入计划标题" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">日期 *</label>
+                        <input type="date" class="form-input" id="planDate" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">开始时间</label>
+                            <input type="time" class="form-input" id="planStartTime">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">结束时间</label>
+                            <input type="time" class="form-input" id="planEndTime">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">重复</label>
+                        <select class="form-select" id="planRepeat">
+                            <option value="none">不重复</option>
+                            <option value="daily">每天</option>
+                            <option value="weekly">每周</option>
+                            <option value="monthly">每月</option>
+                            <option value="yearly">每年</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">截止日期</label>
+                        <input type="date" class="form-input" id="planDueDate">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+                <button class="btn btn-primary" onclick="savePlan()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 数据存储
+        let plans = JSON.parse(localStorage.getItem('planflow_plans')) || [];
+
+        // 当前状态
+        let currentView = 'year';
+        let currentYear = new Date().getFullYear();
+        let currentMonth = new Date().getMonth() + 1;
+        let currentDay = new Date().getDate();
+        let editingPlanId = null;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initYearSelector();
+            initMonthSelector();
+            initDaySelector();
+            renderCurrentView();
+
+            // 设置默认日期为今天
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('planDate').value = today;
+            document.getElementById('planDueDate').value = today;
+        });
+
+        // 初始化年份选择器
+        function initYearSelector() {
+            const container = document.getElementById('yearSelector');
+            const years = [];
+            for (let i = currentYear - 5; i <= currentYear + 5; i++) {
+                years.push(i);
+            }
+            container.innerHTML = years.map(year => `
+                <button class="year-btn ${year === currentYear ? 'active' : ''}" onclick="selectYear(${year})">
+                    ${year}
+                </button>
+            `).join('');
+        }
+
+        // 初始化月份选择器
+        function initMonthSelector() {
+            const container = document.getElementById('monthSelector');
+            const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+            container.innerHTML = months.map((month, index) => {
+                const hasPlans = getPlansForMonth(currentYear, index + 1).length > 0;
+                return `
+                    <button class="month-btn ${index + 1 === currentMonth ? 'active' : ''} ${hasPlans ? 'has-plans' : ''}"
+                            onclick="selectMonth(${index + 1})">
+                        ${month}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        // 初始化日期选择器
+        function initDaySelector() {
+            const container = document.getElementById('daySelector');
+            const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+            const today = new Date();
+
+            let html = '';
+            for (let i = 1; i <= daysInMonth; i++) {
+                const plansCount = getPlansForDay(currentYear, currentMonth, i).length;
+                const isToday = today.getFullYear() === currentYear &&
+                               today.getMonth() + 1 === currentMonth &&
+                               today.getDate() === i;
+                html += `
+                    <button class="day-btn ${i === currentDay ? 'active' : ''} ${isToday ? 'today' : ''}"
+                            onclick="selectDay(${i})">
+                        <span>${i}日</span>
+                        ${plansCount > 0 ? `<span class="day-plans-count">${plansCount}</span>` : ''}
+                    </button>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        // 选择年份
+        function selectYear(year) {
+            currentYear = year;
+            currentMonth = 1;
+            currentDay = 1;
+            initYearSelector();
+            initMonthSelector();
+            initDaySelector();
+            renderCurrentView();
+        }
+
+        // 选择月份
+        function selectMonth(month) {
+            currentMonth = month;
+            currentDay = 1;
+            initMonthSelector();
+            initDaySelector();
+            switchView('month');
+            renderCurrentView();
+        }
+
+        // 选择日期
+        function selectDay(day) {
+            currentDay = day;
+            initDaySelector();
+            switchView('day');
+            renderCurrentView();
+        }
+
+        // 切换视图
+        function switchView(view) {
+            currentView = view;
+
+            // 更新按钮状态
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.view === view);
+            });
+
+            // 更新视图显示
+            document.querySelectorAll('.view-container').forEach(v => {
+                v.classList.remove('active');
+            });
+            document.getElementById(`${view}View`).classList.add('active');
+
+            // 移动端关闭侧边栏
+            if (window.innerWidth < 768) {
+                closeSidebar();
+            }
+
+            renderCurrentView();
+        }
+
+        // 渲染当前视图
+        function renderCurrentView() {
+            switch (currentView) {
+                case 'year':
+                    renderYearView();
+                    break;
+                case 'month':
+                    renderMonthView();
+                    break;
+                case 'day':
+                    renderDayView();
+                    break;
+            }
+        }
+
+        // 渲染年视图
+        function renderYearView() {
+            document.getElementById('yearViewTitle').textContent = `${currentYear} 年`;
+
+            const months = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+            const container = document.getElementById('yearViewGrid');
+
+            container.innerHTML = months.map((month, index) => {
+                const planCount = getPlansForMonth(currentYear, index + 1).length;
+                return `
+                    <div class="year-month-card" onclick="selectMonth(${index + 1})">
+                        <h3>${month}</h3>
+                        <div class="plan-count">${planCount}</div>
+                        <div class="plan-label">个计划</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 渲染月视图
+        function renderMonthView() {
+            document.getElementById('monthViewTitle').textContent = `${currentYear}年${currentMonth}月`;
+
+            const container = document.getElementById('calendarGrid');
+            const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+            const daysInPrevMonth = new Date(currentYear, currentMonth - 1, 0).getDate();
+
+            const today = new Date();
+            let html = '';
+
+            // 上月日期
+            for (let i = firstDay - 1; i >= 0; i--) {
+                const day = daysInPrevMonth - i;
+                html += `<div class="calendar-day other-month"><div class="calendar-day-number">${day}</div></div>`;
+            }
+
+            // 当月日期
+            for (let day = 1; day <= daysInMonth; day++) {
+                const plans = getPlansForDay(currentYear, currentMonth, day);
+                const isToday = today.getFullYear() === currentYear &&
+                               today.getMonth() + 1 === currentMonth &&
+                               today.getDate() === day;
+                const isSelected = day === currentDay;
+
+                let dots = '';
+                if (plans.length > 0) {
+                    dots = Array(Math.min(plans.length, 3)).fill('<span class="calendar-dot"></span>').join('');
+                }
+
+                html += `
+                    <div class="calendar-day ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}"
+                         onclick="selectDay(${day})">
+                        <div class="calendar-day-number">${day}</div>
+                        ${dots}
+                    </div>
+                `;
+            }
+
+            // 下月日期
+            const totalCells = firstDay + daysInMonth;
+            const remainingCells = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+            for (let i = 1; i <= remainingCells; i++) {
+                html += `<div class="calendar-day other-month"><div class="calendar-day-number">${i}</div></div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        // 渲染日视图
+        function renderDayView() {
+            const date = new Date(currentYear, currentMonth - 1, currentDay);
+            const dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
+            document.getElementById('dayViewTitle').textContent = `${currentYear}年${currentMonth}月${currentDay}日`;
+
+            const today = new Date();
+            const isToday = today.getFullYear() === currentYear &&
+                           today.getMonth() + 1 === currentMonth &&
+                           today.getDate() === currentDay;
+            document.getElementById('dayViewSubtitle').textContent = isToday ? '今天' : dayNames[date.getDay()];
+
+            const dayPlans = getPlansForDay(currentYear, currentMonth, currentDay);
+            const container = document.getElementById('dayPlanList');
+
+            if (dayPlans.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                        <h3>暂无计划</h3>
+                        <p>点击"添加计划"创建新计划</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = dayPlans.map(plan => renderPlanCard(plan)).join('');
+            }
+        }
+
+        // 渲染计划卡片
+        function renderPlanCard(plan) {
+            const isExpired = plan.dueDate && new Date(plan.dueDate) < new Date().setHours(0, 0, 0, 0) && !plan.completed;
+            const repeatLabels = {
+                'none': '',
+                'daily': '每天',
+                'weekly': '每周',
+                'monthly': '每月',
+                'yearly': '每年'
+            };
+
+            return `
+                <div class="plan-card ${plan.completed ? 'completed' : ''} ${isExpired ? 'expired' : ''}">
+                    <div class="plan-checkbox ${plan.completed ? 'checked' : ''}" onclick="togglePlan('${plan.id}')"></div>
+                    <div class="plan-content">
+                        ${plan.startTime ? `
+                            <div class="plan-time">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M12 6v6l4 2"/>
+                                </svg>
+                                ${plan.startTime}${plan.endTime ? ' - ' + plan.endTime : ''}
+                            </div>
+                        ` : ''}
+                        <div class="plan-title">${escapeHtml(plan.title)}</div>
+                        <div class="plan-meta">
+                            ${plan.dueDate ? `
+                                <div class="plan-meta-item">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="4" width="18" height="18" rx="2"/>
+                                        <path d="M16 2v4M8 2v4M3 10h18"/>
+                                    </svg>
+                                    截止: ${plan.dueDate}
+                                </div>
+                            ` : ''}
+                            ${plan.repeat !== 'none' ? `
+                                <span class="plan-tag ${plan.repeat}">${repeatLabels[plan.repeat]}</span>
+                            ` : ''}
+                        </div>
+                    </div>
+                    <div class="plan-actions">
+                        <button class="plan-action-btn" onclick="editPlan('${plan.id}')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                        </button>
+                        <button class="plan-action-btn delete" onclick="deletePlan('${plan.id}')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 获取某月计划
+        function getPlansForMonth(year, month) {
+            return plans.filter(plan => {
+                const planDate = new Date(plan.date);
+                const matches = planDate.getFullYear() === year && planDate.getMonth() + 1 === month;
+
+                // 检查重复计划
+                if (plan.repeat === 'yearly') {
+                    return planDate.getMonth() + 1 === month;
+                }
+                if (plan.repeat === 'monthly') {
+                    return true;
+                }
+
+                return matches;
+            });
+        }
+
+        // 获取某日计划
+        function getPlansForDay(year, month, day) {
+            const targetDate = new Date(year, month - 1, day);
+            const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+            return plans.filter(plan => {
+                // 精确日期匹配
+                if (plan.date === dateStr) return true;
+
+                // 重复计划
+                const planDate = new Date(plan.date);
+                if (plan.repeat === 'daily') return true;
+                if (plan.repeat === 'weekly' && planDate.getDay() === targetDate.getDay()) return true;
+                if (plan.repeat === 'monthly') return true;
+                if (plan.repeat === 'yearly' && planDate.getMonth() + 1 === month && planDate.getDate() === day) return true;
+
+                return false;
+            });
+        }
+
+        // 打开弹窗
+        function openModal(planId = null) {
+            editingPlanId = planId;
+            const modal = document.getElementById('modalOverlay');
+            const title = document.getElementById('modalTitle');
+            const form = document.getElementById('planForm');
+
+            if (planId) {
+                const plan = plans.find(p => p.id === planId);
+                if (plan) {
+                    title.textContent = '编辑计划';
+                    document.getElementById('planId').value = plan.id;
+                    document.getElementById('planTitle').value = plan.title;
+                    document.getElementById('planDate').value = plan.date;
+                    document.getElementById('planStartTime').value = plan.startTime || '';
+                    document.getElementById('planEndTime').value = plan.endTime || '';
+                    document.getElementById('planRepeat').value = plan.repeat;
+                    document.getElementById('planDueDate').value = plan.dueDate || '';
+                }
+            } else {
+                title.textContent = '添加计划';
+                form.reset();
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('planDate').value = today;
+                document.getElementById('planDueDate').value = today;
+                editingPlanId = null;
+            }
+
+            modal.classList.add('active');
+        }
+
+        // 关闭弹窗
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('active');
+            editingPlanId = null;
+        }
+
+        // 保存计划
+        function savePlan() {
+            const title = document.getElementById('planTitle').value.trim();
+            const date = document.getElementById('planDate').value;
+            const startTime = document.getElementById('planStartTime').value;
+            const endTime = document.getElementById('planEndTime').value;
+            const repeat = document.getElementById('planRepeat').value;
+            const dueDate = document.getElementById('planDueDate').value;
+
+            if (!title || !date) {
+                alert('请填写计划标题和日期');
+                return;
+            }
+
+            if (editingPlanId) {
+                // 更新计划
+                const index = plans.findIndex(p => p.id === editingPlanId);
+                if (index !== -1) {
+                    plans[index] = {
+                        ...plans[index],
+                        title,
+                        date,
+                        startTime,
+                        endTime,
+                        repeat,
+                        dueDate
+                    };
+                }
+            } else {
+                // 添加新计划
+                const newPlan = {
+                    id: Date.now().toString(),
+                    title,
+                    date,
+                    startTime,
+                    endTime,
+                    repeat,
+                    dueDate,
+                    completed: false
+                };
+                plans.push(newPlan);
+            }
+
+            saveToStorage();
+            closeModal();
+            renderCurrentView();
+            initMonthSelector();
+            initDaySelector();
+        }
+
+        // 切换计划完成状态
+        function togglePlan(planId) {
+            const plan = plans.find(p => p.id === planId);
+            if (plan) {
+                plan.completed = !plan.completed;
+                saveToStorage();
+                renderCurrentView();
+            }
+        }
+
+        // 编辑计划
+        function editPlan(planId) {
+            openModal(planId);
+        }
+
+        // 删除计划
+        function deletePlan(planId) {
+            if (confirm('确定要删除这个计划吗？')) {
+                plans = plans.filter(p => p.id !== planId);
+                saveToStorage();
+                renderCurrentView();
+                initMonthSelector();
+                initDaySelector();
+            }
+        }
+
+        // 日期导航
+        function navigateDay(direction) {
+            const date = new Date(currentYear, currentMonth - 1, currentDay);
+            date.setDate(date.getDate() + direction);
+
+            currentYear = date.getFullYear();
+            currentMonth = date.getMonth() + 1;
+            currentDay = date.getDate();
+
+            initMonthSelector();
+            initDaySelector();
+            renderCurrentView();
+        }
+
+        // 切换侧边栏
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        }
+
+        function closeSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        }
+
+        // 保存到本地存储
+        function saveToStorage() {
+            localStorage.setItem('planflow_plans', JSON.stringify(plans));
+        }
+
+        // HTML转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 点击弹窗外部关闭
+        document.getElementById('modalOverlay').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('modalOverlay')) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
